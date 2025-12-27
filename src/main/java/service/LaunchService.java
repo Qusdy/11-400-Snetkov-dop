@@ -3,6 +3,7 @@ package service;
 import client.SpaceXClient;
 import dto.Launch;
 import dto.Rocket;
+import dto.Stats;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -114,13 +115,13 @@ public class LaunchService {
 
         int known = 0;
         int ok = 0;
-        Map<Integer, Integer> byYear = new TreeMap<>();
+        Map<String, Integer> byYear = new TreeMap<>();
 
         for (Launch l : all) {
             if (l == null) continue;
 
             Integer y = yearFromUtc(l.dateUtc);
-            if (y != null) byYear.merge(y, 1, Integer::sum);
+            if (y != null) byYear.merge(String.valueOf(y), 1, Integer::sum);
 
             if (l.success != null) {
                 known++;
@@ -130,18 +131,6 @@ public class LaunchService {
 
         double pct = (known == 0) ? 0.0 : (100.0 * ok / known);
         return new Stats(pct, known, byYear);
-    }
-
-    public static class Stats {
-        public final double successPct;
-        public final int totalWithKnownResult;
-        public final Map<Integer, Integer> launchesByYear;
-
-        public Stats(double successPct, int totalWithKnownResult, Map<Integer, Integer> launchesByYear) {
-            this.successPct = successPct;
-            this.totalWithKnownResult = totalWithKnownResult;
-            this.launchesByYear = launchesByYear;
-        }
     }
 
     private boolean matchesStatus(Launch l, String status) {

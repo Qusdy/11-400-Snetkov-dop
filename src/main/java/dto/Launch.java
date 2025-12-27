@@ -20,4 +20,40 @@ public class Launch {
 
     public Links links;
     public Boolean upcoming;
+
+    public String getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDateUtc() {
+        return dateUtc;
+    }
+
+    public Boolean getSuccess() {
+        return success;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public String getRocket() {
+        return rocket;
+    }
+
+    public String getRocketName() {
+        return rocketName;
+    }
+
+    public Links getLinks() {
+        return links;
+    }
+
+    public Boolean getUpcoming() {
+        return upcoming;
+    }
 }
