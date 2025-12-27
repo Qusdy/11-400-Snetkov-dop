@@ -54,7 +54,7 @@ public class LaunchService {
 
             if (!rocket.isEmpty()) {
                 String rn = safe(l.rocketName).toLowerCase(Locale.ROOT);
-                if (!rn.equals(rocket)) continue; // Falcon 9 == Falcon 9
+                if (!rn.equals(rocket)) continue;
             }
 
             if (!query.isEmpty()) {
