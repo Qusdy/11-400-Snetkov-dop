@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <title>SpaceX</title>
-
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
@@ -12,9 +11,9 @@
 
 <div>
     <#if nextLaunch??>
-        Next: ${nextLaunch.name!""?html} | ${nextLaunch.dateUtc!""?html}
+        Next: ${nextLaunch.name!""?html} | ${nextLaunch.date_utc!""?html}
     <#else>
-        Next: no data
+        Next: no data (press load)
     </#if>
 </div>
 
@@ -42,7 +41,8 @@
     </select>
 
     <input id="q" placeholder="mission name">
-    <button id="apply">load</button>
+    <button id="apply">load last 20</button>
+    <span id="meta"></span>
 </div>
 
 <hr>
@@ -70,14 +70,9 @@
             year: $('#year').val(),
             status: $('#status').val(),
             rocket: $('#rocket').val(),
-            q: $('#q').val()
+            q: $('#q').val(),
+            limit: 20
         };
-    }
-
-    function rocketName(l) {
-        if (!l.rocket) return '';
-        if (typeof l.rocket === 'string') return l.rocket;
-        return l.rocket.name || '';
     }
 
     function statusText(success) {
@@ -87,42 +82,57 @@
     }
 
     function renderLaunch(l) {
+        const youtube = l.links && l.links.youtube_id
+            ? ('<a target="_blank" href="https://www.youtube.com/watch?v=' + esc(l.links.youtube_id) + '">video</a>')
+            : '';
+
         return (
-            '<div>' +
-            '<b>' + esc(l.name) + '</b>' +
-            ' | ' + esc(l.dateUtc) +
-            ' | ' + esc(rocketName(l)) +
-            ' | ' + esc(statusText(l.success)) +
-            ' <button class="detailBtn" data-id="' + esc(l.id) + '">detail</button>' +
-            '</div><hr>'
+            '<div style="border:1px solid #ddd;padding:8px;margin:8px 0">' +
+            '<div><b>' + esc(l.name) + '</b></div>' +
+            '<div>date: ' + esc(l.date_utc) + '</div>' +
+            '<div>rocket: ' + esc(l.rocketName || '') + '</div>' +
+            '<div>status: ' + esc(statusText(l.success)) + '</div>' +
+            '<div>' + youtube + '</div>' +
+            '<button class="detailBtn" data-id="' + esc(l.id) + '">detail</button>' +
+            '</div>'
         );
+    }
+
+    function ensureLoaded(cb) {
+        $('#meta').text(' loading all launches/rockets...');
+        $.ajax({
+            url: '/api/launches/load',
+            method: 'POST',
+            dataType: 'json',
+            success: function(info) {
+                $('#meta').text(' loaded launches=' + info.launchCount + ', rockets=' + info.rocketCount);
+                cb();
+            },
+            error: function(xhr) {
+                // если хочешь — можно тут не падать, а всё равно пытаться GET /api/launches
+                $('#meta').text(' load error: ' + xhr.status);
+            }
+        });
     }
 
     function loadLaunches() {
         $('#grid').text('loading...');
-
         $.ajax({
             url: '/api/launches',
             method: 'GET',
             dataType: 'json',
             data: getFilters(),
-            success: function(data) {
-                var docs = (data && data.docs) ? data.docs : [];
-                var html = '';
-
-                for (var i = 0; i < docs.length; i++) {
-                    html += renderLaunch(docs[i]);
-                }
-
+            success: function(list) {
+                let html = '';
+                for (let i = 0; i < list.length; i++) html += renderLaunch(list[i]);
                 $('#grid').html(html);
 
                 $('.detailBtn').on('click', function() {
-                    var id = $(this).data('id');
-                    loadDetail(id);
+                    loadDetail($(this).data('id'));
                 });
             },
-            error: function(xhr, status, err) {
-                $('#grid').text('error: ' + status);
+            error: function(xhr) {
+                $('#grid').text('error: ' + xhr.status + ' ' + (xhr.responseText || ''));
             }
         });
     }
@@ -135,22 +145,26 @@
             data: { id: id },
             success: function(l) {
                 $('#detailTitle').text(l.name || 'Launch');
+                const youtube = l.links && l.links.youtube_id
+                    ? ('<a target="_blank" href="https://www.youtube.com/watch?v=' + esc(l.links.youtube_id) + '">youtube</a>')
+                    : '';
                 $('#detailBody').html(
-                    '<div>date: ' + esc(l.dateUtc || '') + '</div>' +
+                    '<div>date: ' + esc(l.date_utc || '') + '</div>' +
+                    '<div>rocket: ' + esc(l.rocketName || '') + '</div>' +
                     '<div>success: ' + esc(String(l.success)) + '</div>' +
                     '<div>details: ' + esc(l.details || '') + '</div>' +
-                    '<div>rocket: ' + esc(rocketName(l)) + '</div>'
+                    '<div>' + youtube + '</div>'
                 );
                 document.getElementById('detailDlg').showModal();
             },
-            error: function(xhr, status, err) {
-                alert('detail error: ' + status);
+            error: function(xhr) {
+                alert('detail error: ' + xhr.status);
             }
         });
     }
 
-    $('#apply').on('click', loadLaunches);
-    loadLaunches();
+    $('#apply').on('click', function() { loadLaunches(); });
+    ensureLoaded(loadLaunches);
 </script>
 
 </body>

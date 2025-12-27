@@ -14,7 +14,9 @@ public class Launch {
     public Boolean success;
     public String details;
 
-    public Object rocket;
+    public String rocket;
+
+    public String rocketName;
 
     public Links links;
     public Boolean upcoming;

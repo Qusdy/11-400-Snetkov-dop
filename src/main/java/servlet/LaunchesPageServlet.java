@@ -1,13 +1,12 @@
 package servlet;
 
+import dto.Launch;
 import service.LaunchService;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import javax.servlet.http.*;
+import java.util.List;
 
 @WebServlet(urlPatterns = "/launches")
 public class LaunchesPageServlet extends HttpServlet {
@@ -21,7 +20,16 @@ public class LaunchesPageServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException {
         try {
-            req.setAttribute("nextLaunch", service.nextUpcoming().orElse(null));
+            HttpSession session = req.getSession(false);
+            Launch next = null;
+
+            if (session != null && session.getAttribute("launchesAll") != null) {
+                @SuppressWarnings("unchecked")
+                List<Launch> all = (List<Launch>) session.getAttribute("launchesAll");
+                next = service.nextUpcoming(all).orElse(null);
+            }
+
+            req.setAttribute("nextLaunch", next);
             req.getRequestDispatcher("/launches.ftl").forward(req, resp);
         } catch (Exception e) {
             throw new ServletException(e);
