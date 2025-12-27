@@ -109,7 +109,6 @@
                 cb();
             },
             error: function(xhr) {
-                // если хочешь — можно тут не падать, а всё равно пытаться GET /api/launches
                 $('#meta').text(' load error: ' + xhr.status);
             }
         });
